@@ -1,0 +1,41 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@leafygreen-ui/icon": "^1.2.1",
+    "@leafygreen-ui/radio-box-group": "^1.1.2",
+    "@leafygreen-ui/radio-group": "^1.2.2",
+    "@zeit/next-css": "^1.0.1",
+    "d3": "^5.9.7",
+    "moment": "^2.24.0",
+    "mongodb-stitch-browser-sdk": "^4.5.0",
+    "next": "^9.0.2",
+    "next-fonts": "^0.17.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-scripts": "3.0.1",
+    "semiotic": "1.19.11",
+    "typescript": "^3.5.3"
+  },
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
