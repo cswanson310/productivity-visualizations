@@ -23,6 +23,7 @@ class TeamCRStats extends React.Component {
       nodes: [],
       links: [],
       windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
       team: props.team,
       members: props.members,
       teamStats: {
@@ -36,7 +37,11 @@ class TeamCRStats extends React.Component {
     };
     const originalOnResize = window.onresize;
     window.onresize = () => {
-      this.setState(Object.assign(this.state, {windowWidth: window.innerWidth}));
+      this.setState(Object.assign(this.state,
+                                  {
+                                    windowWidth: window.innerWidth,
+                                    windowHeight: window.innerHeight
+                                  }));
       if (originalOnResize) {
         originalOnResize();
       }
@@ -50,6 +55,7 @@ class TeamCRStats extends React.Component {
   aggPrefix(startDate) {
     const dateMatch = startDate ? 
           [{$match: {modified: {$gte: startDate.toISOString()}}}] : [];
+    console.log(dateMatch);
     return dateMatch.concat([
       {$match: {$or: [
         {owner_email: {$in: this.teamEmails()}},
@@ -85,8 +91,9 @@ class TeamCRStats extends React.Component {
 
   async getBySender(byReviewer, db, startDate) {
     this.byReviewer = byReviewer;
+    console.log(this.byReviewer);
     return db.collection('issues')
-        .aggregate(this.aggPrefix().concat([
+        .aggregate(this.aggPrefix(startDate).concat([
             {$group: {
               _id: {sender: "$owner_email", reviewer: "$reviewers"},
               count: {$sum: 1},
@@ -109,8 +116,11 @@ class TeamCRStats extends React.Component {
 
   recompute(newStartDate, newDays) {
     newStartDate = newStartDate || this.state.startDate;
+    console.log(newStartDate);
     this.getByReviewer(this.db, newStartDate)
         .then(res => this.getBySender(res, this.db, newStartDate)).then(bySender => {
+          console.log("bySender");
+          console.log(bySender);
           function fixEmail(email) {
             let at_idx = email.indexOf("@");
             return at_idx === -1 ? email : email.slice(0, email.indexOf("@"))
@@ -124,11 +134,6 @@ class TeamCRStats extends React.Component {
 
           function isTeamMember(email) {
               return this.state.members.indexOf(fixEmail(email)) !== -1;
-          }
-
-          if (bySender.length == 0) {
-              d3.select("#chart").append("p").text("No issues found");
-              return;
           }
 
           const colors = [
@@ -207,6 +212,9 @@ class TeamCRStats extends React.Component {
               link.target = reviewer_node_map[link.target];
           }
 
+          console.log("refreshed!")
+          console.log(nodes);
+          console.log(links);
           let d3_json = {
             nodes: nodes,
             links: links,
@@ -241,7 +249,7 @@ class TeamCRStats extends React.Component {
     this.client = this.client || Stitch.initializeDefaultAppClient('productivity_viz-mtrvv');
     this.db = this.db || this.client.getServiceClient(RemoteMongoClient.factory, 'productivity_viz').db('codereview');
 
-    this.login().then(() => this.recompute());
+    this.login().then(() => this.recompute(this.state.startDate, this.state.days));
   }
 
   render() {
@@ -253,7 +261,7 @@ class TeamCRStats extends React.Component {
       edges: this.state.links,
 
       /* --- Size --- */
-      size: [this.state.windowWidth * 0.40, 500],
+      size: [this.state.windowWidth * 0.35, this.state.windowHeight * 0.5],
       margin: {right: 130},
 
       /* --- Layout --- */
@@ -355,8 +363,12 @@ class TeamCRStats extends React.Component {
         newStartDate = null;
       } else {
         newDays = Number(e.target.value);
-        newStartDate = moment().subtract(newDays, "days");
+        newStartDate = new Date(moment().subtract(newDays, "days"));
       }
+      console.log("Clicked!");
+      console.log(e);
+      console.log(newStartDate);
+      console.log(newDays);
       this.recompute(newStartDate, newDays);
     }
 
@@ -380,17 +392,34 @@ class TeamCRStats extends React.Component {
             </TimeSelector>
           </div>
           <div id="chart-label">
-            <p id="sender-label">
-              Sender
-            </p>
-            <div id="chart-label-line" className={selected().kind || "none"}>
-            </div>
-            <p id="receiver-label">
-              Receiver
-            </p>
+            <table>
+              <tbody>
+                <tr>
+                  <td id="sender-label">
+                    <p>
+                      Sender
+                    </p>
+                  </td>
+                  <td id="chart-label-line">
+                    <div className={selected().kind || "none"}>
+                    </div>
+                  </td>
+                  <td id="receiver-label-text">
+                    <p>
+                      Receiver
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <div id="network-frame">
-            {this.state.nodes.length && <NetworkFrame {...frameProps} />}
+            {this.state.nodes.length
+              ? <NetworkFrame {...frameProps} />
+              : <h3 id="none-found">
+                  No issues Found For This Range
+                </h3>
+            }
           </div>
         </div>
         <div id="detail-pane">
@@ -411,15 +440,11 @@ class TeamCRStats extends React.Component {
           />
         </div>
         <style jsx>{`
-          #test {
-            padding: 7px;
-            color: #ccc;
-          }
-          #chart-label {
-            margin-top: 30px;
-            width: 40vw;
-            height: 30px;
+          #chart-label table {
+            margin-top: 3vh;
+            height: 3vh;
             position: relative;
+            width: ${(this.state.windowWidth / 2.3) - 60}px;
           }
           .time-opt {
             display: table-cell;
@@ -437,31 +462,32 @@ class TeamCRStats extends React.Component {
             font-weight: bold;
           }
           #chart-label-line {
-            width: 28vw;
+            width: ${(this.state.windowWidth/ 3.1) - 100}px;
             display: inline-block;
             height: 100%;
             background: url("/static/arrow-right.svg") no-repeat;
             transform: rotateY(180deg);
-            top: 13px;
+            top: 1.3vh;
             position: absolute;
           }
           #chart-label p {
             display: inline-block;
-            font-size: 12px;
+            font-size: 11px;
+            margin: 0;
           }
-          p#sender-label {
+          #sender-label {
             width: 6vw;
             text-align: right;
-            margin-right: 10px;
+            padding-right: 10px;
           }
-          p#receiver-label {
-            float: right;
+          #receiver-label-text {
+            width: 6vw;
+            padding-left: 10px;
           }
           #overall-stats-pane {
-            width: 86vw;
             max-height: 70vh;
             background: #fafbfc;
-            margin: 0 auto;
+            margin-left: 7vw;
           }
           #chart {
             vertical-align: top;
@@ -472,7 +498,7 @@ class TeamCRStats extends React.Component {
             display: inline-block;
           }
           #detail-pane {
-            width: 43vw;
+            width: 48vw;
             display: inline-block;
             vertical-align: top;
           }
@@ -491,15 +517,15 @@ class TeamCRStats extends React.Component {
           }
           #network-frame {
             padding-left: 7vw;
-            max-width: 600px;
-            margin-top: 20px;
+            max-width: 40vw;
+            margin-top: 2vh;
             position: relative;
           }
         `}</style>
         <style global jsx>{`
           .label {
             transform: translate(20px, 4px);
-            font: 13px sans-serif;
+            font: 11px sans-serif;
             stroke-opacity: .3;
           }
           .label.sender {

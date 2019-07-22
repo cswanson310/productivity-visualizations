@@ -45,7 +45,7 @@ export default function Header(props) {
           padding: 0;
         }
         img {
-          padding: 10px 40px;
+          padding: 10px 4vh;
           width: 120px;
         }
         .sep {
@@ -54,7 +54,7 @@ export default function Header(props) {
         }
         #crumbs {
           vertical-align: center;
-          padding: 25px 7vw;
+          padding: 2.5vh 7vw;
         }
         #crumbs:first-child {
           padding-left: 0px;
@@ -62,7 +62,7 @@ export default function Header(props) {
         #crumbs span {
           color: #006cbc;
           font: 14px sans-serif;
-          padding: 30px 0px;
+          padding: 3vh 0px;
         }
       `}</style>
     </div>

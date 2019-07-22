@@ -151,10 +151,10 @@ export default class Team extends React.Component {
             font-size: 24px;
             font-weight: medium;
             font: Akzidenz-Grotesk;
-            margin-left: 7vw;
             text-transform: capitalize;
             display: inline-block;
-            padding-bottom: 20px;
+            padding-bottom: 2vh;
+            margin: 0px 0px 0px 7vw;
           }
           #team-count {
             display: inline-block;

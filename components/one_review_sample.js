@@ -62,7 +62,7 @@ export default class OneReviewSample extends React.Component {
           data: days,
 
           /* --- Size --- */
-          size: [230,150],
+          size: [0.14 * window.innerWidth,150],
           responsiveWidth: true,
 
           /* --- Layout --- */
@@ -106,7 +106,7 @@ export default class OneReviewSample extends React.Component {
             </div>
             <style jsx>{`
               .owner {
-                display: inline-block;
+                display: inline;
                 font: 12px sans-serif;
                 font-weight: bold;
                 padding: 2px 4px;
@@ -121,12 +121,12 @@ export default class OneReviewSample extends React.Component {
                 top: 161px;
                 left: 1px;
                 height: 30px;
-                width: 290px;
+                width: 24vw;
                 overflow: hidden;
               }
               .review-frame {
                 position: relative;
-                width: 280px;
+                width: 20vw;
                 display: inline-block;
                 margin: 5px 3px 0px 3px;
                 background-color: white;
@@ -141,7 +141,7 @@ export default class OneReviewSample extends React.Component {
                 font-weight: normal;
                 height: 30px;
                 overflow: hidden;
-                display: flex;
+                display: inline-block;
                 margin: 0;
               }
               a {

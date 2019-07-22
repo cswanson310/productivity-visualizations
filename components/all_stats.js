@@ -88,7 +88,7 @@ export default class AllStats extends React.Component {
           0
         ]},
         nPatches: {$size: "$patchsets"},
-        nReviews: {$size: "$messages"},
+        nReviews: {$size: {$ifNull: ["$messages", []]}},
         nComments: 
               ((!this.props.hovered || this.props.kind === "sender")
                 ? {$sum: "$patch_details.num_comments"}
@@ -104,7 +104,7 @@ export default class AllStats extends React.Component {
                               in: {
                                 $size: {
                                   $filter: {
-                                    input: "$$this.messages",
+                                    input: {$ifNull: ["$$this.messages", []]},
                                     as: "msg",
                                     cond: {$eq: [
                                       "$$msg.author_email",
@@ -187,7 +187,7 @@ export default class AllStats extends React.Component {
         sent: {$addToSet: "$issue"},
         nPatches: {$avg: "$nPatches"},
         nReviews: {$avg: "$nReviews"},
-        filesChanged: {$avg: {$size: "$changes.files"}},
+        filesChanged: {$avg: {$size: {$ifNull: ["$changes.files", []]}}},
         linesAdded: {$avg: "$changes.linesAdded"},
         linesRemoved: {$avg: "$changes.linesRemoved"},
         nComments: {$avg: "$nComments"},
