@@ -55,7 +55,6 @@ class TeamCRStats extends React.Component {
   aggPrefix(startDate) {
     const dateMatch = startDate ? 
           [{$match: {modified: {$gte: startDate.toISOString()}}}] : [];
-    console.log(dateMatch);
     return dateMatch.concat([
       {$match: {$or: [
         {owner_email: {$in: this.teamEmails()}},
@@ -91,7 +90,6 @@ class TeamCRStats extends React.Component {
 
   async getBySender(byReviewer, db, startDate) {
     this.byReviewer = byReviewer;
-    console.log(this.byReviewer);
     return db.collection('issues')
         .aggregate(this.aggPrefix(startDate).concat([
             {$group: {
@@ -116,11 +114,8 @@ class TeamCRStats extends React.Component {
 
   recompute(newStartDate, newDays) {
     newStartDate = newStartDate || this.state.startDate;
-    console.log(newStartDate);
     this.getByReviewer(this.db, newStartDate)
         .then(res => this.getBySender(res, this.db, newStartDate)).then(bySender => {
-          console.log("bySender");
-          console.log(bySender);
           function fixEmail(email) {
             let at_idx = email.indexOf("@");
             return at_idx === -1 ? email : email.slice(0, email.indexOf("@"))
@@ -212,9 +207,6 @@ class TeamCRStats extends React.Component {
               link.target = reviewer_node_map[link.target];
           }
 
-          console.log("refreshed!")
-          console.log(nodes);
-          console.log(links);
           let d3_json = {
             nodes: nodes,
             links: links,
@@ -247,7 +239,10 @@ class TeamCRStats extends React.Component {
   componentDidMount() {
     this._isMounted = true;
     this.client = this.client || Stitch.initializeDefaultAppClient('productivity_viz-mtrvv');
-    this.db = this.db || this.client.getServiceClient(RemoteMongoClient.factory, 'productivity_viz').db('codereview');
+    this.db = this.db || this.client
+                             .getServiceClient(RemoteMongoClient.factory,
+                                               'productivity_viz')
+                             .db('codereview');
 
     this.login().then(() => this.recompute(this.state.startDate, this.state.days));
   }
@@ -319,9 +314,7 @@ class TeamCRStats extends React.Component {
       },
       customHoverBehavior: (e) => {
         if (e && this._isMounted) {
-          const newState = Object.assign({}, this.state);
-          newState.hovered = e;
-          this.setState(newState);
+          this.setState(Object.assign(this.state, {hovered: e}));
         }
       },
       customClickBehavior: (e) => {
@@ -346,12 +339,6 @@ class TeamCRStats extends React.Component {
         return <text className={`label ${n.kind}`} key={`${n.id}-${this.state.days}`}>{n.displayName}</text>
       }
     };
-    /*
-    d3.selectAll(".node").filter((n) => {
-      console.log(n);
-      // console.log(n.height);
-    });
-    */
     const onTimeRangeChange = e => {
       if (!this._isMounted) {
         return;
@@ -365,10 +352,6 @@ class TeamCRStats extends React.Component {
         newDays = Number(e.target.value);
         newStartDate = new Date(moment().subtract(newDays, "days"));
       }
-      console.log("Clicked!");
-      console.log(e);
-      console.log(newStartDate);
-      console.log(newDays);
       this.recompute(newStartDate, newDays);
     }
 

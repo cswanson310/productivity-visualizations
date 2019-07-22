@@ -33,7 +33,7 @@ export default class AllStats extends React.Component {
     const memberEmails = this.state.teamMembers.map(name => name + "@10gen.com");
     let teamMatch = {$match: {owner_email: {$in: memberEmails}}};
     if (this.props.kind === "receiver") {
-      teamMatch = {$match: {reviewers: {$in: memberEmails}}}
+      teamMatch = {$match: {reviewers: {$in: memberEmails}}};
     }
     this.fetchData(teamMatch).then(data => {
       if (data.length > 0) {
@@ -55,7 +55,8 @@ export default class AllStats extends React.Component {
 
   async fetchData(userMatch) {
     if (!this.props.db) {
-      return [{sent: 0}];
+      console.log("no db");
+      return [];
     }
     return this.props.db.collection("issues").aggregate([
       {$match: {modified: {$gte: this.props.startDate.toISOString()}}},
@@ -220,6 +221,9 @@ export default class AllStats extends React.Component {
     } else if (this.props.startDate != prevProps.startDate) {
       this.updateTeamData();
     }
+    if (this.props.db && this.state.teamStats.pending) {
+      this.updateTeamData();
+    }
   }
 
   render() {
@@ -230,7 +234,7 @@ export default class AllStats extends React.Component {
           <p>Loading...</p>
         </div>);
     }
-    if (!this.props.hovered.name) {
+    if (!this.props.hovered.name || this.state.teamStats.pending) {
       return (
         <div>
           <table id="stats-blocks">
