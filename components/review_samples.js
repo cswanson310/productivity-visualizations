@@ -162,13 +162,15 @@ export default class ReviewSamples extends React.Component {
             margin: 4px;
           }
         `}</style>
-        {this.state.issues.map(
-          (issue, idx) => (<OneReviewSample
-                             issue={issue}
-                             key={issue.issue}
-                             colors={colors}
-                             showOwner={this.state.user === "Outside Team"}
-                           />))}
+        <div>
+          {this.state.issues.map(
+            (issue, idx) => (<OneReviewSample
+                               issue={issue}
+                               key={issue.issue}
+                               colors={colors}
+                               showOwner={this.state.user === "Outside Team"}
+                             />))}
+        </div>
       </div>
     );
   }
