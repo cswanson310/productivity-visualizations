@@ -54,7 +54,7 @@ export default function Header(props) {
         }
         #crumbs {
           vertical-align: center;
-          padding: 25px 10vw;
+          padding: 25px 7vw;
         }
         #crumbs:first-child {
           padding-left: 0px;

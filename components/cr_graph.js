@@ -9,7 +9,7 @@ var d3 = require("d3");
 import AllStats from './all_stats.js';
 import ReviewSamples from './review_samples.js';
 import React from 'react';
-import { RadioBox, RadioBoxGroup } from '@leafygreen-ui/radio-box-group';
+import { TimeSelector, TimeOption } from './time_select.js';
 import Link from 'next/link';
 
 
@@ -22,6 +22,7 @@ class TeamCRStats extends React.Component {
     this.state = {
       nodes: [],
       links: [],
+      windowWidth: window.innerWidth,
       team: props.team,
       members: props.members,
       teamStats: {
@@ -33,15 +34,22 @@ class TeamCRStats extends React.Component {
       days: defaultDays,
       startDate: new Date(moment().subtract(defaultDays, "days")),
     };
+    const originalOnResize = window.onresize;
+    window.onresize = () => {
+      this.setState(Object.assign(this.state, {windowWidth: window.innerWidth}));
+      if (originalOnResize) {
+        originalOnResize();
+      }
+    };
   }
 
   teamEmails() {
     return this.state.members.map(n => n + "@10gen.com");
   }
 
-  aggPrefix() {
-    const dateMatch = this.state.startDate ? 
-          [{$match: {modified: {$gte: this.state.startDate.toISOString()}}}] : [];
+  aggPrefix(startDate) {
+    const dateMatch = startDate ? 
+          [{$match: {modified: {$gte: startDate.toISOString()}}}] : [];
     return dateMatch.concat([
       {$match: {$or: [
         {owner_email: {$in: this.teamEmails()}},
@@ -59,9 +67,9 @@ class TeamCRStats extends React.Component {
       {$match: {$or: [{owner_email: {$ne: "Outside Team"}}, {reviewers: {$ne: "Outside Team"}}]}}
     ]);
   }
-  async getByReviewer(db) {
+  async getByReviewer(db, startDate) {
     return db.collection('issues')
-        .aggregate(this.aggPrefix().concat([
+        .aggregate(this.aggPrefix(startDate).concat([
             {$group: {_id: {sender: "$owner_email", reviewer: "$reviewers"}, count: {$sum: 1}}},
             {
               $group: {
@@ -75,7 +83,7 @@ class TeamCRStats extends React.Component {
         .toArray();
   }
 
-  async getBySender(byReviewer, db) {
+  async getBySender(byReviewer, db, startDate) {
     this.byReviewer = byReviewer;
     return db.collection('issues')
         .aggregate(this.aggPrefix().concat([
@@ -99,109 +107,120 @@ class TeamCRStats extends React.Component {
     return this.client.auth.loginWithCredential(new AnonymousCredential());
   }
 
-  recompute() {
-    this.getByReviewer(this.db).then((res) => this.getBySender(res, this.db)).then(bySender => {
-      function fixEmail(email) {
-        let at_idx = email.indexOf("@");
-        return at_idx === -1 ? email : email.slice(0, email.indexOf("@"))
-      }
+  recompute(newStartDate, newDays) {
+    newStartDate = newStartDate || this.state.startDate;
+    this.getByReviewer(this.db, newStartDate)
+        .then(res => this.getBySender(res, this.db, newStartDate)).then(bySender => {
+          function fixEmail(email) {
+            let at_idx = email.indexOf("@");
+            return at_idx === -1 ? email : email.slice(0, email.indexOf("@"))
+          }
 
-      const byReviewer = this.byReviewer;
-      this.state.teamStats = Object.assign(this.state.teamStats, {
-        byReviewer: byReviewer.map(rev => Object.assign(rev, {_id: fixEmail(rev._id)})),
-        bySender: bySender
-      });
+          const byReviewer = this.byReviewer;
+          this.state.teamStats = Object.assign(this.state.teamStats, {
+            byReviewer: byReviewer.map(rev => Object.assign(rev, {_id: fixEmail(rev._id)})),
+            bySender: bySender
+          });
 
-      function isTeamMember(email) {
-          return this.state.members.indexOf(fixEmail(email)) !== -1;
-      }
+          function isTeamMember(email) {
+              return this.state.members.indexOf(fixEmail(email)) !== -1;
+          }
 
-      if (bySender.length == 0) {
-          d3.select("#chart").append("p").text("No issues found");
-          return;
-      }
+          if (bySender.length == 0) {
+              d3.select("#chart").append("p").text("No issues found");
+              return;
+          }
 
-      const colors = [
-        "#196EE6",
-        "#E6B219",
-        "#E6196E",
-        "#19C3E6",
-        "#116149",
-        "#E65D19",
-        "#1392AB",
-        "#80340E",
-        "#ABABAB",
-        "#94640A",
-        "#AC0F0F",
-        "#464C4F",
-        "#EF4C4C",
-        "#1392AB",
-        "#734EFA",
-        "#8DE8B3",
-        "#E65D19",
-        "#1392AB",
-        "#80340E",
-        "#ABABAB",
-        "#94640A",
-        "#AC0F0F",
-        "#464C4F",
-        "#EF4C4C",
-        "#1392AB",
-        "#734EFA",
-        "#8DE8B3",
-      ];
-      let nodes = [];
-      let numNodes = 0;
-      let links = [];
+          const colors = [
+            "#196EE6",
+            "#E6B219",
+            "#E6196E",
+            "#19C3E6",
+            "#116149",
+            "#E65D19",
+            "#1392AB",
+            "#80340E",
+            "#ABABAB",
+            "#94640A",
+            "#AC0F0F",
+            "#464C4F",
+            "#EF4C4C",
+            "#1392AB",
+            "#734EFA",
+            "#8DE8B3",
+            "#E65D19",
+            "#1392AB",
+            "#80340E",
+            "#ABABAB",
+            "#94640A",
+            "#AC0F0F",
+            "#464C4F",
+            "#EF4C4C",
+            "#1392AB",
+            "#734EFA",
+            "#8DE8B3",
+          ];
+          let nodes = [];
+          let numNodes = 0;
+          let links = [];
 
-      function displayName(user) {
-        const dotIndex = user.indexOf(".");
-        if (dotIndex === -1) {
-          return user;
-        }
-        return user[0].toUpperCase() + user.slice(1, dotIndex);
-      }
+          function displayName(user) {
+            const dotIndex = user.indexOf(".");
+            if (dotIndex === -1) {
+              return user;
+            }
+            return user[0].toUpperCase() + user.slice(1, dotIndex);
+          }
 
-      for (let top_sender of bySender) {
-          for (let target of top_sender.targets) {
-              links.push({
-                source: numNodes,
-                value: target.count,
-                target: fixEmail(target.reviewer)
+          for (let top_sender of bySender) {
+              for (let target of top_sender.targets) {
+                  links.push({
+                    source: numNodes,
+                    value: target.count,
+                    target: fixEmail(target.reviewer)
+                  });
+              }
+              const color = colors[numNodes];
+              nodes.push({
+                  id: numNodes,
+                  kind: "sender",
+                  name: fixEmail(top_sender._id),
+                  displayName: displayName(fixEmail(top_sender._id)),
+                  color: color,
+                  node: numNodes++
               });
           }
-          const color = colors[numNodes];
-          nodes.push({
-              id: numNodes,
-              kind: "sender",
-              name: fixEmail(top_sender._id),
-              displayName: displayName(fixEmail(top_sender._id)),
-              color: color,
-              node: numNodes++
-          });
-      }
 
-      let reviewer_node_map = {};
-      for (let top_reviewer of this.byReviewer) {
-          nodes.push({
-              id: numNodes,
-              kind: "receiver",
-              name: fixEmail(top_reviewer._id),
-              displayName: displayName(fixEmail(top_reviewer._id)),
-              color: colors[numNodes],
-              node: numNodes
-          });
-          reviewer_node_map[fixEmail(top_reviewer._id)] = numNodes++;
-      }
-      for (let link of links) {
-          link.target = reviewer_node_map[link.target];
-      }
+          let reviewer_node_map = {};
+          for (let top_reviewer of this.byReviewer) {
+              nodes.push({
+                  id: numNodes,
+                  kind: "receiver",
+                  name: fixEmail(top_reviewer._id),
+                  displayName: displayName(fixEmail(top_reviewer._id)),
+                  color: colors[numNodes],
+                  node: numNodes
+              });
+              reviewer_node_map[fixEmail(top_reviewer._id)] = numNodes++;
+          }
+          for (let link of links) {
+              link.target = reviewer_node_map[link.target];
+          }
 
-      let d3_json = {nodes: nodes, links: links, hovered: null, clicked: null, team: this.state.team, members: this.state.members};
-      if (this._isMounted) {
-        this.setState(d3_json);
-      }
-    });
+          let d3_json = {
+            nodes: nodes,
+            links: links,
+            hovered: null,
+            clicked: null,
+            team: this.state.team,
+            members: this.state.members,
+            startDate: newStartDate || this.state.startDate,
+            days: newDays || this.state.days
+          };
+          if (this._isMounted) {
+            this.setState(Object.assign(this.state, d3_json));
+          }
+        });
   }
 
   componentDidUpdate(prevProps) {
@@ -226,18 +245,6 @@ class TeamCRStats extends React.Component {
   }
 
   render() {
-    if (this.state.nodes.length == 0) {
-      return (
-        <div id="cr-stats">
-          <div id="time-range">
-            <h1>Data for: <span id="days-display">30</span> days.</h1>
-          </div>
-          <div id="chart">
-            <p id="click-name"></p>
-          </div>
-        </div>
-      );
-    }
     const haveSelection = () => this.state.clicked || this.state.hovered;
     const selected = () => this.state.clicked || this.state.hovered || {};
     const frameProps = { 
@@ -246,7 +253,7 @@ class TeamCRStats extends React.Component {
       edges: this.state.links,
 
       /* --- Size --- */
-      size: [500, 500],
+      size: [this.state.windowWidth * 0.40, 500],
       margin: {right: 130},
 
       /* --- Layout --- */
@@ -337,34 +344,40 @@ class TeamCRStats extends React.Component {
       // console.log(n.height);
     });
     */
+    const onTimeRangeChange = e => {
+      if (!this._isMounted) {
+        return;
+      }
+      let newDays;
+      let newStartDate;
+      if (e.target.value == "All") {
+        newDays = e.target.value;
+        newStartDate = null;
+      } else {
+        newDays = Number(e.target.value);
+        newStartDate = moment().subtract(newDays, "days");
+      }
+      this.recompute(newStartDate, newDays);
+    }
+
     return (
       <div id="overall-stats-pane">
         <div id="flow-column">
-          <div id="time-select-text">
-          </div>
           <div id="time-select">
-            <RadioBoxGroup className="radio-box-group-style" size="compact" value={this.state.days + ""} onChange={(e)=> {
-              if (!this._isMounted) {
-                return;
-              }
-              let newState = Object.assign({}, this.state);
-              newState.days = e.target.value;
-              if (e.target.value == "All") {
-                newState.startDate = null;
-              } else {
-                newState.startDate = moment().subtract(Number(e.target.value), "days");
-              }
-              this.setState(newState);
-              this.recompute();
-            }}>
+            <TimeSelector
+              value={this.state.days}
+              onChange={onTimeRangeChange}>
               {["All Time", "365", "90", "60", "30", "14", "7"].map((opt, idx) => {
-                return (
-                  <RadioBox key={idx} value={opt}>
-                    {opt === "All Time" ? opt : opt + " days"}
-                  </RadioBox>
+                return (<TimeOption key={idx} value={opt}>
+                          <div className={this.state.days == opt ? "time-opt checked" : "time-opt"}>
+                            <p>
+                              {opt === "All Time" ? opt : opt + " days"}
+                            </p>
+                          </div>
+                        </TimeOption>
                 );
               })}
-            </RadioBoxGroup>
+            </TimeSelector>
           </div>
           <div id="chart-label">
             <p id="sender-label">
@@ -377,7 +390,7 @@ class TeamCRStats extends React.Component {
             </p>
           </div>
           <div id="network-frame">
-            <NetworkFrame {...frameProps} />
+            {this.state.nodes.length && <NetworkFrame {...frameProps} />}
           </div>
         </div>
         <div id="detail-pane">
@@ -386,7 +399,7 @@ class TeamCRStats extends React.Component {
             teamName={this.state.team}
             teamStats={this.state.teamStats}
             startDate={this.state.startDate}
-            hovered={selected()} 
+            hovered={selected()}
             teamMembers={this.state.members}
             kind={selected().kind || "sender"}
            />
@@ -398,14 +411,33 @@ class TeamCRStats extends React.Component {
           />
         </div>
         <style jsx>{`
+          #test {
+            padding: 7px;
+            color: #ccc;
+          }
           #chart-label {
             margin-top: 30px;
-            width: 512px;
+            width: 40vw;
             height: 30px;
             position: relative;
           }
+          .time-opt {
+            display: table-cell;
+          }
+          .time-opt p {
+            margin: 0;
+            font-size: 12px;
+            text-align: center;
+            vertical-align: middle;
+            display: inline-block;
+            color: #464c4f;
+          }
+          .time-opt.checked p {
+            color: black;
+            font-weight: bold;
+          }
           #chart-label-line {
-            width: 370px;
+            width: 28vw;
             display: inline-block;
             height: 100%;
             background: url("/static/arrow-right.svg") no-repeat;
@@ -418,7 +450,7 @@ class TeamCRStats extends React.Component {
             font-size: 12px;
           }
           p#sender-label {
-            width: 75px;
+            width: 6vw;
             text-align: right;
             margin-right: 10px;
           }
@@ -426,7 +458,7 @@ class TeamCRStats extends React.Component {
             float: right;
           }
           #overall-stats-pane {
-            width: 80vw;
+            width: 86vw;
             max-height: 70vh;
             background: #fafbfc;
             margin: 0 auto;
@@ -436,11 +468,11 @@ class TeamCRStats extends React.Component {
             font: 13px sans-serif;
           }
           #flow-column {
-            width: 600px;
+            width: 42vw;
             display: inline-block;
           }
           #detail-pane {
-            width: 600px;
+            width: 43vw;
             display: inline-block;
             vertical-align: top;
           }
@@ -457,21 +489,8 @@ class TeamCRStats extends React.Component {
             stroke: #000;
             stroke-opacity: .2;
           }
-          #time-range {
-            padding-bottom: 20px;padding-bottom: 20px;
-            font-family: sans-serif;
-            color: #4f4f4f;
-            width: 550px;
-          }
-          #time-select-text {
-            padding-right: 15px;
-          }
-          #time-select-text h1 {
-            font-size: 14px;
-            transform: translateY(12px);
-          }
           #network-frame {
-            padding-left: 85px;
+            padding-left: 7vw;
             max-width: 600px;
             margin-top: 20px;
             position: relative;

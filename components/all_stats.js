@@ -4,6 +4,7 @@ import OtherFinder from './other_finder.js';
 
 export default class AllStats extends React.Component {
   _mounted = false;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -21,10 +22,6 @@ export default class AllStats extends React.Component {
           timeToLGTM: 0,
         }
       },
-    };
-    this.props = {
-      hovered: {},
-      client: null,
     };
   }
 
@@ -208,7 +205,6 @@ export default class AllStats extends React.Component {
         match = {$match: {reviewers: userEmail}};
       }
       this.fetchData(match).then(data => {
-        console.log(data);
         if (data.length > 0) {
           const newData = Object.assign({}, this.state);
           newData.stats.pending = false;
@@ -228,9 +224,6 @@ export default class AllStats extends React.Component {
 
   render() {
     const teamStats = this.state.teamStats;
-    console.log("all stats render: props, then state:");
-    console.log(this.props);
-    console.log(this.state);
     if (this.props.hovered.name && this.state.stats.pending) {
       return (
         <div>

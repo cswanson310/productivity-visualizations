@@ -151,7 +151,7 @@ export default class Team extends React.Component {
             font-size: 24px;
             font-weight: medium;
             font: Akzidenz-Grotesk;
-            margin-left: 10vw;
+            margin-left: 7vw;
             text-transform: capitalize;
             display: inline-block;
             padding-bottom: 20px;
