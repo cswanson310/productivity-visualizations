@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 function Crumb(props) {
   return (
     <span className={`crumb ${props.first}`}>
@@ -23,30 +25,22 @@ function Crumb(props) {
 export default function Header(props) {
   return (
     <div id="header">
-      <div id="img-block">
-        <img src="/static/mongodb-logo.png" alt="MongoDB"/>
-      </div>
       <div id="crumbs">
-        <Crumb text="TEAMS" first="first" />
-        <span className="sep">
-          >
-        </span>
+        <Link href="/teams">
+          <a>
+            <Crumb text="TEAMS" first="first" />
+          </a>
+        </Link>
+        {props.team && 
+          <span className="sep">
+            >
+          </span>
+        }
         {props.team && <Crumb text={props.team} />}
       </div>
       <style jsx>{`
         #header {
           background: #fafbfc;
-        }
-        #img-block {
-          height: 60px;
-          border-bottom: 1px solid #d8d8d8;
-          background: #fff;
-          margin: 0;
-          padding: 0;
-        }
-        img {
-          padding: 10px 4vh;
-          width: 120px;
         }
         .sep {
           font-family: Helvetica;
@@ -56,8 +50,15 @@ export default function Header(props) {
           vertical-align: center;
           padding: 2.5vh 7vw;
         }
-        #crumbs:first-child {
+        #crumbs a:first-child {
           padding-left: 0px;
+        }
+        #crumbs a {
+          text-decoration: none;
+        }
+        #crumbs a:hover {
+          cursor: pointer;
+          text-decoration: underline;
         }
         #crumbs span {
           color: #006cbc;

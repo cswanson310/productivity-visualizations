@@ -12,6 +12,7 @@ import React from 'react';
 import { TimeSelector, TimeOption } from './time_select.js';
 import Link from 'next/link';
 
+const client = Stitch.initializeDefaultAppClient('productivity_viz-mtrvv');
 
 class TeamCRStats extends React.Component {
   _isMounted = false;
@@ -109,7 +110,7 @@ class TeamCRStats extends React.Component {
   }
 
   async login() {
-    return this.client.auth.loginWithCredential(new AnonymousCredential());
+    return client.auth.loginWithCredential(new AnonymousCredential());
   }
 
   recompute(newStartDate, newDays) {
@@ -238,8 +239,7 @@ class TeamCRStats extends React.Component {
 
   componentDidMount() {
     this._isMounted = true;
-    this.client = this.client || Stitch.initializeDefaultAppClient('productivity_viz-mtrvv');
-    this.db = this.db || this.client
+    this.db = this.db || client
                              .getServiceClient(RemoteMongoClient.factory,
                                                'productivity_viz')
                              .db('codereview');
@@ -411,14 +411,15 @@ class TeamCRStats extends React.Component {
             teamName={this.state.team}
             teamStats={this.state.teamStats}
             startDate={this.state.startDate}
-            hovered={selected()}
+            hovered={this.state.clicked || this.state.hovered}
             teamMembers={this.state.members}
             kind={selected().kind || "sender"}
            />
           <ReviewSamples
             db={this.db}
             startDate={this.state.startDate}
-            user={(selected() || {}).name}
+            user={selected().name}
+            selected={this.state.clicked || this.state.hovered}
             teamMembers={this.state.members}
           />
         </div>

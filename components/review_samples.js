@@ -87,9 +87,10 @@ export default class ReviewSamples extends React.Component {
       "#ED553B",
     ];
     if (this.state.issues.length === 0) {
+      console.log(this.props);
       return (
         <div>
-          <h3>No reviews in the last 14 days</h3>
+          {this.props.selected && <h3>No reviews in the last 14 days</h3>}
           <style jsx>{`
             h3 {
               margin: 40px 0 10px 0;

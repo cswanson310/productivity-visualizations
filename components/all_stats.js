@@ -199,7 +199,7 @@ export default class AllStats extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.hovered.id != prevProps.hovered.id) {
+    if (this.props.hovered && (!prevProps.hovered || this.props.hovered.id != prevProps.hovered.id)) {
       const userEmail = this.props.hovered.name + "@10gen.com";
       let match = {$match: {owner_email: userEmail}}
       if (this.props.kind === "receiver") {
@@ -228,13 +228,13 @@ export default class AllStats extends React.Component {
 
   render() {
     const teamStats = this.state.teamStats;
-    if (this.props.hovered.name && this.state.stats.pending) {
+    if (this.props.hovered && this.props.hovered.name && this.state.stats.pending) {
       return (
         <div>
           <p>Loading...</p>
         </div>);
     }
-    if (!this.props.hovered.name || this.state.teamStats.pending) {
+    if (!this.props.hovered || !this.props.hovered.name || this.state.teamStats.pending) {
       return (
         <div>
           <table id="stats-blocks">

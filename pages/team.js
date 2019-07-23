@@ -1,117 +1,13 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import Header from '../components/header.js';
+import MongoLogoStrip from '../components/mongo_logo_strip.js';
 import { useRouter } from 'next/router';
+import TeamData from '../components/team_data.js';
 
 const DynamicCRStats = dynamic(
   () => import('../components/cr_graph.js'),
   {ssr: false});
-
-const kAllTeams = {
-    query: [
-        "ian.boros",
-        "martin.neupauer",
-        "samuel.mercier",
-        "justin.seyster",
-        "misha.ivkov",
-        "david.storch",
-        "jacob.evans",
-        "pawel.terlecki",
-        "charlie.swanson",
-        "george.wangensteen",
-        "xinhao.zhang",
-        "james.wahlin",
-        "nicholas.zolnierz",
-        "davis.haupt",
-        "ted.tuckman",
-        "bernard.gorman",
-        "arun.banala",
-        "anton.korshunov"
-    ],
-    sharding: [
-        "kaloian.manassiev",
-        "jason.zhang",
-        "jamie.heppenstall",
-        "alex.taskov",
-        "blake.oler",
-        "esha.maharishi",
-        "jack.mulrow",
-        "janna.golden",
-        "matthew.saltz",
-        "misha.tyulenev",
-        "randolph",
-        "kevin.pulo",
-        "lamont.nelson",
-    ],
-    replication: [
-        "tess.avitabile",
-        "judah.schvimer",
-        "jason.chan",
-        "lingzhi.deng",
-        "matthew.russotto",
-        "pavithra.vetriselvan",
-        "samy.lanka",
-        "siyuan.zhou",
-        "suganthi.mani",
-        "vessy.ratcheva",
-        "william.schultz",
-        "allison.easton",
-        "vishnu.kaushik",
-        "medha.potluri",
-    ],
-    serviceArch: [
-        "jason.carey",
-        "ben.caimano",
-        "mathias.stearn",
-    ],
-    storageEngines: [
-        "michael.cahill",
-        "alexander.gorrod",
-        "vamsi.krishna",
-        "donald.anderson",
-        "keith.bostic",
-        "luke.chen",
-        "alex.cameron",
-        "sasha.fedorova",
-        "sue.loverso",
-        "sulabh.mahajan",
-        "luke.pearson",
-        "haribabu.kommi",
-    ],
-    execution: [
-        "eric.milkie",
-        "geert.bosh",
-        "benety.goh",
-        "danel.gottlieb",
-        "dianna.hohensee",
-        "gregory.wlodarek",
-        "louis.williams",
-        "maria.vankeulen",
-        "xiangyu.yao",
-    ],
-    security: [
-        "acm",
-        "spencer.jackson",
-        "jonathan.reams",
-        "mark.benvenuto",
-        "sara.golemon",
-        "shreyas.kalyan",
-    ],
-    devTools: [
-        "acm",
-        "adam",
-        "billy.donahue",
-        "gabirel.russell",
-        "henrik.edin",
-        "matthew.robinson",
-    ],
-    triageRelease: [
-        "kelsey.schubert",
-        "bruce.lucas",
-        "danny.hatcher",
-        "eric.sedor",
-    ],
-};
 
 const DynamicIcon = dynamic(
   () => import('@leafygreen-ui/icon'),
@@ -124,12 +20,13 @@ export default class Team extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {members: kAllTeams[props.team], team: props.team};
+    this.state = {members: TeamData[props.team], team: props.team};
   }
 
   render() {
     return (
         <div>
+          <MongoLogoStrip />
           <Header team={this.state.team}/>
           <div id="team-banner">
             <h1>

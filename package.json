@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@leafygreen-ui/button": "^2.3.2",
     "@leafygreen-ui/icon": "^1.2.1",
     "@leafygreen-ui/radio-box-group": "^1.1.2",
     "@leafygreen-ui/radio-group": "^1.2.2",
