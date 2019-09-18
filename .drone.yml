@@ -1,0 +1,33 @@
+---
+pipeline:
+  publish:
+    image: plugins/ecr
+    secrets: [ ecr_access_key, ecr_secret_key]
+    registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
+    repo: 795250896452.dkr.ecr.us-east-1.amazonaws.com/skunkworks/${DRONE_REPO_NAME}
+    create_repository: true
+    tags:
+    - git-${DRONE_COMMIT_SHA:0:7}
+    - latest
+    when:
+      branch: master
+      event: push
+
+  deploy-staging:
+    image: quay.io/ipedrazas/drone-helm
+    # The release name should be unique across the namespace, the app or repo name is recommended
+    release: cr-stats
+    namespace: skunkworks
+    environment:
+      - API_SERVER=https://api.staging.corp.mongodb.com
+    prefix: STAGING
+    secrets: [ staging_kubernetes_token ]
+    helm_repos: mongodb=https://10gen.github.io/helm-charts
+    chart: mongodb/web-app
+    chart_version: 4.3.4
+    tiller_ns: skunkworks
+    client_only: true
+    values: "image.tag=git-${DRONE_COMMIT_SHA:0:7},image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/<NAMESPACE>/${DRONE_REPO_NAME},ingress.enabled=true,ingress.hosts[0]=cr-stats.skunkworks.staging.corp.mongodb.com"
+    when:
+      branch: master
+      event: push
